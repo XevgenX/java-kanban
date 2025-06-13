@@ -21,9 +21,9 @@ public class SubTask extends Task {
     }
 
     @Override
-    public void moveToInProgress() {
+    public void tryToMoveToInProgress() {
         status = TaskStatus.IN_PROGRESS;
-        epic.moveToInProgress();
+        epic.tryToMoveToInProgress();
     }
 
     /** Завершение всех подзадач эпика считается завершением эпика */

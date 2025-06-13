@@ -30,6 +30,17 @@ public class Epic extends Task {
         subTasks.clear();
     }
 
+    @Override
+    public void tryToMoveToInProgress() {
+        for (SubTask subTask : subTasks) {
+            if (subTask.getStatus() == TaskStatus.IN_PROGRESS) {
+                status = TaskStatus.IN_PROGRESS;
+                break;
+            }
+        }
+
+    }
+
     /** Завершение всех подзадач эпика считается завершением эпика */
     @Override
     public void tryToMmoveToDone() {

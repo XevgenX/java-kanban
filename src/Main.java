@@ -14,12 +14,11 @@ public class Main {
         manager.createEpic(epic);
         System.out.println(manager.getAllSimpleTasks());
         System.out.println(manager.getAllEpics());
-        subTask1.moveToInProgress();
+        subTask1.tryToMoveToInProgress();
         System.out.println(manager.getAllEpics());
         subTask1.tryToMmoveToDone();
         subTask2.tryToMmoveToDone();
         System.out.println(manager.getAllEpics());
         manager.deleteTask(epic.getId());
-        System.out.println(manager.getAllElements());
     }
 }

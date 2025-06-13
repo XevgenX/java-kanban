@@ -49,7 +49,7 @@ public class Task {
         return status;
     }
 
-    public void moveToInProgress() {
+    public void tryToMoveToInProgress() {
         status = TaskStatus.IN_PROGRESS;
     }
 
