@@ -1,16 +1,15 @@
 import model.Epic;
 import model.SubTask;
 import model.Task;
-import model.TaskStatus;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
 public class TaskManager {
     /** Хранение задач всех типов */
-    private HashMap<Long, Task> savedTasks;
-    private HashMap<Long, Epic> savedEpics;
-    private HashMap<Long, SubTask> savedSubTasks;
+    private final HashMap<Long, Task> savedTasks;
+    private final HashMap<Long, Epic> savedEpics;
+    private final HashMap<Long, SubTask> savedSubTasks;
     private Long currentMaxId;
 
     public TaskManager() {
@@ -79,21 +78,21 @@ public class TaskManager {
             for (SubTask subTask : epic.getSubTasks()) {
                 subTask.setId(nextId());
                 savedSubTasks.put(subTask.getId(), subTask);
-                if (subTask.getStatus() != TaskStatus.NEW) {
-                    epic.tryToMoveToInProgress();
-                }
             }
-            epic.tryToMmoveToDone();
+            epic.adjustStatus();
             savedEpics.put(epic.getId(), epic);
             generatedId = epic.getId();
         }
         return generatedId;
     }
 
-    public Long createSubTask(SubTask subTask, Long epicId) {
+    public Long createSubTask(SubTask subTask) {
         Long generatedId = null;
-        if (subTask != null && epicId != null && savedEpics.containsKey(epicId)) {
-            Epic epic = savedEpics.get(epicId);
+        if (subTask != null
+                && subTask.getEpic() != null
+                && subTask.getEpic().getId() != null
+                && savedEpics.containsKey(subTask.getEpic().getId())) {
+            Epic epic = savedEpics.get(subTask.getEpic().getId());
             subTask.setId(nextId());
             subTask.setEpic(epic);
             epic.addSubTask(subTask);
@@ -116,8 +115,7 @@ public class TaskManager {
                 && epic.getId() != null
                 && savedEpics.containsKey(epic.getId())) {
             savedEpics.put(epic.getId(), epic);
-            epic.tryToMoveToInProgress();
-            epic.tryToMmoveToDone();
+            epic.adjustStatus();
         }
     }
 
@@ -126,15 +124,7 @@ public class TaskManager {
                 && subTask.getId() != null
                 && savedSubTasks.containsKey(subTask.getId())) {
             savedSubTasks.put(subTask.getId(), subTask);
-            switch (subTask.getStatus()) {
-                case IN_PROGRESS:
-                    subTask.getEpic().tryToMoveToInProgress();
-                    break;
-                case DONE:
-                    subTask.getEpic().tryToMmoveToDone();
-                    break;
-                default:
-            }
+            subTask.getEpic().adjustStatus();
         }
     }
 
@@ -160,7 +150,7 @@ public class TaskManager {
         if (id != null && savedSubTasks.containsKey(id)) {
             SubTask subTask = savedSubTasks.get(id);
             subTask.getEpic().removeSubTask(subTask);
-            subTask.getEpic().tryToMmoveToDone();
+            subTask.getEpic().adjustStatus();
             savedSubTasks.remove(subTask.getId());
         }
     }

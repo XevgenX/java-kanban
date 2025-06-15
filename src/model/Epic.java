@@ -30,6 +30,11 @@ public class Epic extends Task {
         subTasks.clear();
     }
 
+    public void adjustStatus() {
+        tryToMoveToInProgress();
+        tryToMmoveToDone();
+    }
+
     @Override
     public void tryToMoveToInProgress() {
         for (SubTask subTask : subTasks) {
