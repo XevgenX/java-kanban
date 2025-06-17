@@ -31,30 +31,68 @@ public class Epic extends Task {
     }
 
     public void adjustStatus() {
+        adjustStatusForEmptySubTaskList();
         tryToMoveToInProgress();
         tryToMmoveToDone();
     }
 
     @Override
     public void tryToMoveToInProgress() {
+        int subTasksCountWithStatusNew = 0;
+        int subTasksCountWithStatusInProgress = 0;
+        int subTasksCountWithStatusDone = 0;
         for (SubTask subTask : subTasks) {
-            if (subTask.getStatus() == TaskStatus.IN_PROGRESS) {
-                status = TaskStatus.IN_PROGRESS;
-                break;
+            switch (subTask.getStatus()) {
+                case NEW:
+                    subTasksCountWithStatusNew++;
+                    break;
+                case IN_PROGRESS:
+                    subTasksCountWithStatusInProgress++;
+                    break;
+                case DONE:
+                    subTasksCountWithStatusDone++;
+                    break;
             }
         }
-
+        if (subTasksCountWithStatusInProgress > 0) {
+            status = TaskStatus.IN_PROGRESS;
+        }
+        if (subTasksCountWithStatusNew > 0 && subTasksCountWithStatusDone > 0) {
+            status = TaskStatus.IN_PROGRESS;
+        }
     }
 
     /** Завершение всех подзадач эпика считается завершением эпика */
     @Override
     public void tryToMmoveToDone() {
+        if (subTasks.isEmpty()) {
+            return;
+        }
         for (SubTask subTask : subTasks) {
             if (subTask.getStatus() != TaskStatus.DONE) {
                 return;
             }
         }
         status = TaskStatus.DONE;
+    }
+
+    private void adjustStatusForEmptySubTaskList() {
+        if (subTasks.isEmpty()) {
+            status = TaskStatus.NEW;
+        } else {
+            boolean everySubTaskIsNew = false;
+            for (SubTask subTask : subTasks) {
+                if (subTask.getStatus() == TaskStatus.NEW) {
+                    everySubTaskIsNew = true;
+                } else {
+                    everySubTaskIsNew = false;
+                    break;
+                }
+            }
+            if (everySubTaskIsNew) {
+                status = TaskStatus.NEW;
+            }
+        }
     }
 
     @Override
