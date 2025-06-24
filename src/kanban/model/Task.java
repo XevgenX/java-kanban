@@ -1,4 +1,4 @@
-package model;
+package kanban.model;
 
 import java.util.Objects;
 
@@ -19,6 +19,12 @@ public class Task {
         this.title = title;
         this.description = description;
         status = TaskStatus.NEW;
+    }
+    
+    public Task(Task task) {
+        this.title = task.getTitle();
+        this.description = task.getDescription();
+        status = task.getStatus();
     }
 
     public Long getId() {
@@ -74,9 +80,6 @@ public class Task {
     public String toString() {
         return "Task{" +
                 "id=" + id +
-                ", title='" + title + '\'' +
-                ", description='" + description + '\'' +
-                ", status=" + status +
                 '}';
     }
 }

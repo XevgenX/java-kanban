@@ -1,4 +1,4 @@
-package model;
+package kanban.model;
 
 import java.util.ArrayList;
 
@@ -12,6 +12,14 @@ public class Epic extends Task {
     public Epic(String title, String description) {
         super(title, description);
         subTasks = new ArrayList<>();
+    }
+
+    public Epic(Epic epic) {
+        super(epic.getTitle(), epic.getDescription());
+        subTasks = new ArrayList<>();
+        for (SubTask subTask : epic.getSubTasks()) {
+            subTasks.add(new SubTask(subTask));
+        }
     }
 
     public ArrayList<SubTask> getSubTasks() {
@@ -43,13 +51,13 @@ public class Epic extends Task {
         int subTasksCountWithStatusDone = 0;
         for (SubTask subTask : subTasks) {
             switch (subTask.getStatus()) {
-                case NEW:
+                case TaskStatus.NEW:
                     subTasksCountWithStatusNew++;
                     break;
-                case IN_PROGRESS:
+                case TaskStatus.IN_PROGRESS:
                     subTasksCountWithStatusInProgress++;
                     break;
-                case DONE:
+                case TaskStatus.DONE:
                     subTasksCountWithStatusDone++;
                     break;
             }
@@ -99,10 +107,6 @@ public class Epic extends Task {
     public String toString() {
         return "Epic{" +
                 "id=" + id +
-                ", title='" + title + '\'' +
-                ", description='" + description + '\'' +
-                ", status=" + status +
-                ", subTasks=" + subTasks +
                 '}';
     }
 }

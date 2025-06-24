@@ -1,40 +1,47 @@
-import model.Epic;
-import model.SubTask;
-import model.Task;
+package kanban.impl;
+
+import kanban.HistoryManager;
+import kanban.TaskManager;
+import kanban.model.Epic;
+import kanban.model.SubTask;
+import kanban.model.Task;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
-public class TaskManager {
+public class InMemoryTaskManager implements TaskManager {
     /** Хранение задач всех типов */
     private final HashMap<Long, Task> savedTasks;
     private final HashMap<Long, Epic> savedEpics;
     private final HashMap<Long, SubTask> savedSubTasks;
     private Long currentMaxId;
+    private HistoryManager historyManager;
 
-    public TaskManager() {
+    public InMemoryTaskManager(HistoryManager historyManager) {
         savedTasks = new HashMap<>();
         savedEpics = new HashMap<>();
         savedSubTasks = new HashMap<>();
         currentMaxId = 0L;
+        this.historyManager = historyManager;
     }
 
-    /** Получение списка всех простых задач */
+    @Override
     public ArrayList<Task> getAllSimpleTasks() {
         return new ArrayList<>(savedTasks.values());
     }
 
-    /** Получение списка всех эпиков */
+    @Override
     public ArrayList<Epic> getAllEpics() {
         return new ArrayList<>(savedEpics.values());
     }
 
-    /** Получение списка всех подзадач независимо от эпика */
+    @Override
     public ArrayList<SubTask> getAllSubTasks() {
         return new ArrayList<>(savedSubTasks.values());
     }
 
-    /** Получение списка всех подзадач эпика */
+    @Override
     public ArrayList<SubTask> getSubTasksByEpic(Long epicId) {
         ArrayList<SubTask> subTasks = new ArrayList<>();
         if (savedEpics.containsKey(epicId)) {
@@ -44,48 +51,57 @@ public class TaskManager {
         return subTasks;
     }
 
+    @Override
     public Task getTaskById(Long id) {
-        return savedTasks.get(id);
+        Task task = savedTasks.get(id);
+        historyManager.add(task);
+        return task;
     }
 
-    public Task getEpicById(Long id) {
-        return savedEpics.get(id);
+    @Override
+    public Epic getEpicById(Long id) {
+        Epic epic = savedEpics.get(id);
+        historyManager.add(epic);
+        return epic;
     }
 
-    public Task getSubTaskById(Long id) {
-        return savedSubTasks.get(id);
+    @Override
+    public SubTask getSubTaskById(Long id) {
+        SubTask subTask = savedSubTasks.get(id);
+        historyManager.add(subTask);
+        return subTask;
     }
 
-    /**
-     * Метод сохранения простой задачи
-     * @param task Предзаполненная задача
-     * @return Сгенерированный id сохраненного элемента или null, если что то пошло не так
-     */
+    @Override
     public Long createSimpleTask(Task task) {
         Long generatedId = null;
         if (task != null) {
-            task.setId(nextId());
-            savedTasks.put(task.getId(), task);
-            generatedId = task.getId();
+            Task taskToBeSaved = new Task(task);
+            taskToBeSaved.setId(nextId());
+            savedTasks.put(taskToBeSaved.getId(), taskToBeSaved);
+            generatedId = taskToBeSaved.getId();
         }
         return generatedId;
     }
 
+    @Override
     public Long createEpic(Epic epic) {
         Long generatedId = null;
         if (epic != null) {
-            epic.setId(nextId());
-            for (SubTask subTask : epic.getSubTasks()) {
+            Epic epicToBeSaved = new Epic(epic);
+            epicToBeSaved.setId(nextId());
+            for (SubTask subTask : epicToBeSaved.getSubTasks()) {
                 subTask.setId(nextId());
                 savedSubTasks.put(subTask.getId(), subTask);
             }
-            epic.adjustStatus();
-            savedEpics.put(epic.getId(), epic);
-            generatedId = epic.getId();
+            epicToBeSaved.adjustStatus();
+            savedEpics.put(epicToBeSaved.getId(), epicToBeSaved);
+            generatedId = epicToBeSaved.getId();
         }
         return generatedId;
     }
 
+    @Override
     public Long createSubTask(SubTask subTask) {
         Long generatedId = null;
         if (subTask != null
@@ -93,15 +109,18 @@ public class TaskManager {
                 && subTask.getEpic().getId() != null
                 && savedEpics.containsKey(subTask.getEpic().getId())) {
             Epic epic = savedEpics.get(subTask.getEpic().getId());
-            subTask.setId(nextId());
-            subTask.setEpic(epic);
-            epic.addSubTask(subTask);
-            savedSubTasks.put(subTask.getId(), subTask);
-            generatedId = subTask.getId();
+            SubTask subTaskToBeSaved = new SubTask(subTask);
+            subTaskToBeSaved.setId(nextId());
+            subTaskToBeSaved.setEpic(epic);
+            epic.addSubTask(subTaskToBeSaved);
+            savedSubTasks.put(subTaskToBeSaved.getId(), subTaskToBeSaved);
+            savedEpics.put(epic.getId(), epic);
+            generatedId = subTaskToBeSaved.getId();
         }
         return generatedId;
     }
 
+    @Override
     public void updateTask(Task task) {
         if (task != null
                 && task.getId() != null
@@ -110,6 +129,7 @@ public class TaskManager {
         }
     }
 
+    @Override
     public void updateEpic(Epic epic) {
         if (epic != null
                 && epic.getId() != null
@@ -119,6 +139,7 @@ public class TaskManager {
         }
     }
 
+    @Override
     public void updateSubTask(SubTask subTask) {
         if (subTask != null
                 && subTask.getId() != null
@@ -128,6 +149,7 @@ public class TaskManager {
         }
     }
 
+    @Override
     public void deleteTask(Long id) {
         if (id != null && savedTasks.containsKey(id)) {
             Task task = savedTasks.get(id);
@@ -135,6 +157,7 @@ public class TaskManager {
         }
     }
 
+    @Override
     public void deleteEpic(Long id) {
         if (id != null && savedEpics.containsKey(id)) {
             Epic epic = savedEpics.get(id);
@@ -146,6 +169,7 @@ public class TaskManager {
         }
     }
 
+    @Override
     public void deleteSubTask(Long id) {
         if (id != null && savedSubTasks.containsKey(id)) {
             SubTask subTask = savedSubTasks.get(id);
@@ -155,25 +179,31 @@ public class TaskManager {
         }
     }
 
-    /** Удаление всех задач */
+    @Override
     public void clearTasks() {
         savedTasks.clear();
     }
 
+    @Override
     public void clearEpic() {
         for (Long id : savedEpics.keySet()) {
             deleteEpic(id);
         }
     }
 
+    @Override
     public void clearSubTasks() {
         for (Long id : savedSubTasks.keySet()) {
             deleteSubTask(id);
         }
     }
 
+    @Override
+    public List<Task> getHistory() {
+        return historyManager.getHistory();
+    }
+
     private Long nextId() {
         return ++currentMaxId;
     }
-
 }

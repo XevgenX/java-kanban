@@ -1,4 +1,4 @@
-package model;
+package kanban.model;
 
 /**
  * Статус, отображающий прогресс задачи

@@ -1,4 +1,4 @@
-package model;
+package kanban.model;
 
 /**
  * Подзадача
@@ -10,6 +10,11 @@ public class SubTask extends Task {
     public SubTask(Epic epic, String title, String description) {
         super(title, description);
         this.epic = epic;
+    }
+
+    public SubTask(SubTask subTask) {
+        super(subTask.getTitle(), subTask.getDescription());
+        this.epic = subTask.getEpic();
     }
 
     public Epic getEpic() {
@@ -31,5 +36,12 @@ public class SubTask extends Task {
     public void tryToMmoveToDone() {
         status = TaskStatus.DONE;
         epic.tryToMmoveToDone();
+    }
+
+    @Override
+    public String toString() {
+        return "SubTask{" +
+                "id=" + id +
+                '}';
     }
 }
