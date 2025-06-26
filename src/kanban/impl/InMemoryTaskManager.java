@@ -1,6 +1,7 @@
 package kanban.impl;
 
 import kanban.HistoryManager;
+import kanban.Managers;
 import kanban.TaskManager;
 import kanban.model.Epic;
 import kanban.model.SubTask;
@@ -18,6 +19,15 @@ public class InMemoryTaskManager implements TaskManager {
     private Long currentMaxId;
     private HistoryManager historyManager;
 
+    public InMemoryTaskManager() {
+        savedTasks = new HashMap<>();
+        savedEpics = new HashMap<>();
+        savedSubTasks = new HashMap<>();
+        currentMaxId = 0L;
+        this.historyManager = Managers.getDefaultHistory();
+    }
+
+    /** Второй конструктор на случай, если появится не только default_ная реализация HistoryManager */
     public InMemoryTaskManager(HistoryManager historyManager) {
         savedTasks = new HashMap<>();
         savedEpics = new HashMap<>();
