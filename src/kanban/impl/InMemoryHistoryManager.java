@@ -9,6 +9,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class InMemoryHistoryManager implements HistoryManager {
+    private static final int HISTORY_LIMIT = 10;
     private LinkedList<Task> history;
 
     @Override

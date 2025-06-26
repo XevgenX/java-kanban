@@ -3,11 +3,10 @@ package kanban;
 import kanban.impl.InMemoryHistoryManager;
 import kanban.impl.InMemoryTaskManager;
 
-public final class Managers {
-    private Managers() {}
+public class Managers {
 
     public static TaskManager getDefault() {
-        return new InMemoryTaskManager(getDefaultHistory());
+        return new InMemoryTaskManager();
     }
 
     public static HistoryManager getDefaultHistory() {
