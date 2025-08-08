@@ -5,36 +5,84 @@ import kanban.model.Epic;
 import kanban.model.SubTask;
 import kanban.model.Task;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 public class InMemoryHistoryManager implements HistoryManager {
-    private static final int HISTORY_LIMIT = 10;
-    private LinkedList<Task> history;
+    private Map<Long, Node> map = new HashMap<>();
+    private Node firstNode;
+    private Node lastNode;
 
     @Override
     public void add(Task task) {
-        if (history == null) {
-            history = new LinkedList<>();
+        if(isEmpty()) {
+            firstNode = new Node(cloneTask(task), null);
+            lastNode = firstNode;
+        } else {
+            remove(task.getId());
+            linkLast(task);
         }
-        if (history.size() == HISTORY_LIMIT) {
-            history.pollLast();
+        map.put(lastNode.getTask().getId(), lastNode);
+    }
+
+    @Override
+    public void remove(Long id) {
+        if (map.containsKey(id)) {
+            removeNode(map.get(id));
         }
-        history.offerFirst(cloneTask(task));
     }
 
     @Override
     public List<Task> getHistory() {
+        if (isEmpty()) {
+            return Collections.emptyList();
+        } else {
+            return getTasks();
+        }
+    }
+
+    private void linkLast(Task task) {
+        Node newLastNode = new Node(cloneTask(task), lastNode);
+        lastNode.setNextNode(newLastNode);
+        lastNode = newLastNode;
+    }
+
+    private List<Task> getTasks() {
+        List<Task> history = new ArrayList<>();
+        Node currentNode = lastNode;
+        history.add(currentNode.getTask());
+        while(currentNode.hasPrevious()) {
+            currentNode = currentNode.getPreviousNode();
+            history.add(currentNode.getTask());
+        }
         return history;
     }
 
-    private Task cloneTask(Task task) {
-        if (task instanceof SubTask) {
-            return new SubTask((SubTask) task);
-        } else if (task instanceof Epic) {
-            return new Epic((Epic) task);
-        } else {
-            return new Task(task);
+    private void removeNode(Node node) {
+        Node previousNode = node.getPreviousNode();
+        Node nextNode = node.getNextNode();
+        if (previousNode != null) {
+            previousNode.setNextNode(nextNode);
         }
+        if (nextNode != null) {
+            nextNode.setPreviousNode(previousNode);
+        }
+        map.remove(node.getTask().getId());
+    }
+
+    private boolean isEmpty() {
+        return firstNode == null;
+    }
+
+    private Task cloneTask(Task task) {
+        Task clonedTask = null;
+        if (task instanceof SubTask) {
+            clonedTask = new SubTask((SubTask) task);
+        } else if (task instanceof Epic) {
+            clonedTask = new Epic((Epic) task);
+        } else {
+            clonedTask = new Task(task);
+        }
+        clonedTask.setId(task.getId());
+        return clonedTask;
     }
 }
