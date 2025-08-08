@@ -14,7 +14,7 @@ public class InMemoryHistoryManager implements HistoryManager {
 
     @Override
     public void add(Task task) {
-        if(isEmpty()) {
+        if (isEmpty()) {
             firstNode = new Node(cloneTask(task), null);
             lastNode = firstNode;
         } else {
@@ -50,7 +50,7 @@ public class InMemoryHistoryManager implements HistoryManager {
         List<Task> history = new ArrayList<>();
         Node currentNode = lastNode;
         history.add(currentNode.getTask());
-        while(currentNode.hasPrevious()) {
+        while (currentNode.hasPrevious()) {
             currentNode = currentNode.getPreviousNode();
             history.add(currentNode.getTask());
         }
