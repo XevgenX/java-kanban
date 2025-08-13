@@ -103,25 +103,33 @@ class InMemoryHistoryManagerTest {
     }
 
     @Test
-    @DisplayName("Недавно сохраненные задачи должны быть первыми в списке истории")
-    public void shouldRemoveOlderstElementWhen11ElementAdded() {
-        manager.add(new Task("Внести правки по комментариям", "Правки проверяем по чату"));
-        manager.add(new Task("Внести правки по комментариям 1", "Правки проверяем по чату 1"));
-        manager.add(new Task("Внести правки по комментариям 2", "Правки проверяем по чату 2"));
-        manager.add(new Task("Внести правки по комментариям 3", "Правки проверяем по чату 3"));
-        manager.add(new Task("Внести правки по комментариям 4", "Правки проверяем по чату 4"));
-        manager.add(new Task("Внести правки по комментариям 5", "Правки проверяем по чату 5"));
-        manager.add(new Task("Внести правки по комментариям 6", "Правки проверяем по чату 6"));
-        manager.add(new Task("Внести правки по комментариям 7", "Правки проверяем по чату 7"));
-        manager.add(new Task("Внести правки по комментариям 8", "Правки проверяем по чату 8"));
-        manager.add(new Task("Внести правки по комментариям 9", "Правки проверяем по чату 9"));
-        manager.add(new Task("Внести правки по комментариям 10", "Правки проверяем по чату 10"));
-        assertEquals(10, manager.getHistory().size());
+    @DisplayName("Должен заменять существующие элементы по id")
+    public void shouldReplaceDuplicatedTask() {
+        Task task = new Task("Внести правки по комментариям", "Правки проверяем по чату");
+        task.setId(1L);
+        manager.add(task);
+        Task task2 = new Task("Внести правки по комментариям 1", "Правки проверяем по чату 1");
+        task.setId(1L);
+        manager.add(task2);
         Task savedInHistoryTask = manager.getHistory().get(0);
-        assertEquals("Внести правки по комментариям 10", savedInHistoryTask.getTitle());
-        assertEquals("Правки проверяем по чату 10", savedInHistoryTask.getDescription());
-        savedInHistoryTask = manager.getHistory().get(9);
         assertEquals("Внести правки по комментариям 1", savedInHistoryTask.getTitle());
         assertEquals("Правки проверяем по чату 1", savedInHistoryTask.getDescription());
+    }
+
+    @Test
+    @DisplayName("Должен заменять существующие элементы по id")
+    public void shouldPlaceReplacedDuplicatedTaskInCorrectOrder() {
+        Task task = new Task("Внести правки по комментариям", "Правки проверяем по чату");
+        task.setId(1L);
+        manager.add(task);
+        Task task2 = new Task("Внести правки по комментариям 1", "Правки проверяем по чату 1");
+        task2.setId(2L);
+        manager.add(task2);
+        Task task3 = new Task("Внести правки по комментариям 2", "Правки проверяем по чату 2");
+        task3.setId(1L);
+        manager.add(task3);
+        Task savedInHistoryTask = manager.getHistory().get(0);
+        assertEquals("Внести правки по комментариям 2", savedInHistoryTask.getTitle());
+        assertEquals("Правки проверяем по чату 2", savedInHistoryTask.getDescription());
     }
 }
