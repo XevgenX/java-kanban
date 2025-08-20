@@ -233,13 +233,9 @@ public class InMemoryTaskManager implements TaskManager {
 
     private boolean validateDateIntervals(Task task) {
         return prioritizedTasks.stream()
-                .noneMatch(t -> {
-                    System.out.println(t.getStartTime().get() + " " + t.getEndTime().get());
-                    System.out.println(task.getStartTime().get() +" " + task.getEndTime().get());
-                    return (t.getStartTime().get().isBefore(task.getEndTime().get()) // t
-                            && task.getStartTime().get().isBefore(t.getEndTime().get()))
-                            || (task.getStartTime().get().isBefore(t.getEndTime().get())
-                            && t.getStartTime().get().isBefore(task.getEndTime().get()));
-                });
+                .noneMatch(t -> (t.getStartTime().get().isBefore(task.getEndTime().get()) // t
+                        && task.getStartTime().get().isBefore(t.getEndTime().get()))
+                        || (task.getStartTime().get().isBefore(t.getEndTime().get())
+                        && t.getStartTime().get().isBefore(task.getEndTime().get())));
     }
 }
