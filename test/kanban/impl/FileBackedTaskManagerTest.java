@@ -10,18 +10,24 @@ import org.junit.jupiter.api.Test;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.util.ArrayList;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.List;
 
 import static kanban.impl.FileBackedTaskManager.FILE_HEADER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-public class FileBackedTaskManagerTest {
+public class FileBackedTaskManagerTest extends TaskManagerTest<FileBackedTaskManager> {
     private File testFile;
+    private File testFileIncludeTimings;
+    private FileBackedTaskManager manager;
 
     @BeforeEach
     public void setUp() throws IOException {
         testFile = initTestFile();
+        testFileIncludeTimings = initTestFileIncludeTimings();
+        manager = new FileBackedTaskManager(testFile);
     }
 
     @Test
@@ -29,7 +35,7 @@ public class FileBackedTaskManagerTest {
     public void shouldInitAndLoadTasksCorrectly() {
         FileBackedTaskManager manager = FileBackedTaskManager.loadFromFile(testFile);
         assertNotNull(manager);
-        ArrayList<Task> tasks = manager.getAllSimpleTasks();
+        List<Task> tasks = manager.getAllSimpleTasks();
         assertNotNull(tasks);
         assertEquals(1, tasks.size());
         Task task = tasks.get(0);
@@ -44,7 +50,7 @@ public class FileBackedTaskManagerTest {
     public void shouldInitAndLoadEpicCorrectly() {
         FileBackedTaskManager manager = FileBackedTaskManager.loadFromFile(testFile);
         assertNotNull(manager);
-        ArrayList<Epic> epics = manager.getAllEpics();
+        List<Epic> epics = manager.getAllEpics();
         assertNotNull(epics);
         assertEquals(1, epics.size());
         Epic epic = epics.get(0);
@@ -62,7 +68,7 @@ public class FileBackedTaskManagerTest {
     public void shouldInitAndLoadSubTaskCorrectly() {
         FileBackedTaskManager manager = FileBackedTaskManager.loadFromFile(testFile);
         assertNotNull(manager);
-        ArrayList<SubTask> subTasks = manager.getAllSubTasks();
+        List<SubTask> subTasks = manager.getAllSubTasks();
         assertNotNull(subTasks);
         assertEquals(1, subTasks.size());
         SubTask subTask = subTasks.get(0);
@@ -75,6 +81,28 @@ public class FileBackedTaskManagerTest {
     }
 
     @Test
+    @DisplayName("должен правильно создать manager и загрузить данные подзадачи из файла, включая дату начала и продолжительность")
+    public void shouldInitAndLoadSubTaskCorrectlyIncludeTiming() {
+        FileBackedTaskManager manager = FileBackedTaskManager.loadFromFile(testFileIncludeTimings);
+        assertNotNull(manager);
+        List<SubTask> subTasks = manager.getAllSubTasks();
+        assertNotNull(subTasks);
+        assertEquals(1, subTasks.size());
+        SubTask subTask = subTasks.get(0);
+        assertEquals(3L, subTask.getId());
+        assertEquals("Sub Task2", subTask.getTitle());
+        assertEquals("Description sub task3", subTask.getDescription());
+        assertEquals(TaskStatus.DONE, subTask.getStatus());
+        assertEquals(LocalDateTime.of(1997, 11, 8, 14, 30), subTask.getStartTime().get());
+        assertEquals(Duration.ofMinutes(50), subTask.getDuration().get());
+        assertEquals(LocalDateTime.of(1997, 11, 8, 15, 20), subTask.getEndTime().get());
+        assertNotNull(subTask.getEpic());
+        assertEquals(LocalDateTime.of(1997, 11, 8, 14, 30), subTask.getEpic().getStartTime().get());
+        assertEquals(LocalDateTime.of(1997, 11, 8, 15, 20), subTask.getEpic().getEndTime().get());
+        assertEquals(2, subTask.getEpic().getId());
+    }
+
+    @Test
     @DisplayName("должен правильно сохранять новые задачи")
     public void shouldSaveTaskCorrectly() throws IOException {
         FileBackedTaskManager manager = FileBackedTaskManager.loadFromFile(testFile);
@@ -82,11 +110,11 @@ public class FileBackedTaskManagerTest {
         manager.createSimpleTask(simpleTask);
         String body = Files.readString(testFile.toPath()).replaceAll("\\R", "\n");
         String expected = """
-                id,type,name,status,description,epic
-                1,TASK,Task1,NEW,Description task1,
-                4,TASK,Внести правки по комментариям,NEW,Правки проверяем по чату,
-                2,EPIC,Epic2,DONE,Description epic2,
-                3,SUBTASK,Sub Task2,DONE,Description sub task3,2
+                id,type,name,status,description,start_date,duration,epic
+                1,TASK,Task1,NEW,Description task1, , ,
+                4,TASK,Внести правки по комментариям,NEW,Правки проверяем по чату, , ,
+                2,EPIC,Epic2,DONE,Description epic2, , ,
+                3,SUBTASK,Sub Task2,DONE,Description sub task3, , ,2
                 """.replaceAll("\\R", "\n");
         assertEquals(expected, body);
     }
@@ -99,11 +127,11 @@ public class FileBackedTaskManagerTest {
         manager.createEpic(epic);
         String body = Files.readString(testFile.toPath()).replaceAll("\\R", "\n");
         String expected = """
-                id,type,name,status,description,epic
-                1,TASK,Task1,NEW,Description task1,
-                2,EPIC,Epic2,DONE,Description epic2,
-                4,EPIC,Сделать финальное задание,NEW,Постараться ничего не забыть,
-                3,SUBTASK,Sub Task2,DONE,Description sub task3,2
+                id,type,name,status,description,start_date,duration,epic
+                1,TASK,Task1,NEW,Description task1, , ,
+                2,EPIC,Epic2,DONE,Description epic2, , ,
+                4,EPIC,Сделать финальное задание,NEW,Постараться ничего не забыть, , ,
+                3,SUBTASK,Sub Task2,DONE,Description sub task3, , ,2
                 """.replaceAll("\\R", "\n");
         assertEquals(expected, body);
     }
@@ -114,17 +142,17 @@ public class FileBackedTaskManagerTest {
         FileBackedTaskManager manager = FileBackedTaskManager.loadFromFile(testFile);
         Epic epic = new Epic("Сделать финальное задание", "Постараться ничего не забыть");
         Long epicId = manager.createEpic(epic);
-        Epic savedEpic = manager.getEpicById(epicId);
+        Epic savedEpic = manager.getEpicById(epicId).get();
         SubTask subTask = new SubTask(savedEpic, "Сделать коммит", "Не забыть про push");
         manager.createSubTask(subTask);
         String body = Files.readString(testFile.toPath()).replaceAll("\\R", "\n");
         String expected = """
-                id,type,name,status,description,epic
-                1,TASK,Task1,NEW,Description task1,
-                2,EPIC,Epic2,DONE,Description epic2,
-                4,EPIC,Сделать финальное задание,NEW,Постараться ничего не забыть,
-                3,SUBTASK,Sub Task2,DONE,Description sub task3,2
-                5,SUBTASK,Сделать коммит,NEW,Не забыть про push,4
+                id,type,name,status,description,start_date,duration,epic
+                1,TASK,Task1,NEW,Description task1, , ,
+                2,EPIC,Epic2,DONE,Description epic2, , ,
+                4,EPIC,Сделать финальное задание,NEW,Постараться ничего не забыть, , ,
+                3,SUBTASK,Sub Task2,DONE,Description sub task3, , ,2
+                5,SUBTASK,Сделать коммит,NEW,Не забыть про push, , ,4
                 """.replaceAll("\\R", "\n");
         assertEquals(expected, body);
     }
@@ -135,12 +163,32 @@ public class FileBackedTaskManagerTest {
              BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
              PrintWriter printWriter = new PrintWriter(bufferedWriter)) {
             printWriter.println(FILE_HEADER);
-            printWriter.println("1,TASK,Task1,NEW,Description task1,");
-            printWriter.println("2,EPIC,Epic2,DONE,Description epic2,");
-            printWriter.println("3,SUBTASK,Sub Task2,DONE,Description sub task3,2");
+            printWriter.println("1,TASK,Task1,NEW,Description task1, , ,");
+            printWriter.println("2,EPIC,Epic2,DONE,Description epic2, , ,");
+            printWriter.println("3,SUBTASK,Sub Task2,DONE,Description sub task3, , ,2");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
         return initFile;
+    }
+
+    private File initTestFileIncludeTimings() throws IOException {
+        File initFile = File.createTempFile("test", "csv");
+        try (FileWriter fileWriter = new FileWriter(initFile);
+             BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+             PrintWriter printWriter = new PrintWriter(bufferedWriter)) {
+            printWriter.println(FILE_HEADER);
+            printWriter.println("1,TASK,Task1,NEW,Description task1,14:30 08.11.1997,50,");
+            printWriter.println("2,EPIC,Epic2,DONE,Description epic2,11:30 08.11.1997,50,");
+            printWriter.println("3,SUBTASK,Sub Task2,DONE,Description sub task3,14:30 08.11.1997,50,2");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return initFile;
+    }
+
+    @Override
+    FileBackedTaskManager getManager() {
+        return manager;
     }
 }

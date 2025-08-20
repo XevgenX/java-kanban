@@ -10,9 +10,10 @@ import kanban.model.*;
 import java.io.*;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.Optional;
 
 public class FileBackedTaskManager extends InMemoryTaskManager {
-    public static final String FILE_HEADER = "id,type,name,status,description,epic";
+    public static final String FILE_HEADER = "id,type,name,status,description,start_date,duration,epic";
     public static final String CSV_SEPARATOR = ",";
     private final TaskConverter taskConverter = new TaskConverter();
     private final EpicConverter epicConverter = new EpicConverter();
@@ -46,20 +47,26 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                         createEpic(epicConverter.fromCsvLine(cells));
                         break;
                     case SUBTASK:
-                        Long id = createSubTask(subTaskConverter.fromCsvLine(cells, getEpicById(Long.parseLong(cells[5]))));
-                        SubTask savedSubTask = getSubTaskById(id);
-                        TaskStatus status = TaskStatus.valueOf(cells[3]);
-                        switch (status) {
-                            case IN_PROGRESS:
-                                savedSubTask.tryToMoveToInProgress();
-                                updateSubTask(savedSubTask);
-                                break;
-                            case DONE:
-                                savedSubTask.tryToMoveToInProgress();
-                                updateSubTask(savedSubTask);
-                                savedSubTask.tryToMmoveToDone();
-                                updateSubTask(savedSubTask);
-                                break;
+                        Optional<Epic> epic = getEpicById(Long.parseLong(cells[7]));
+                        if (epic.isPresent()) {
+                            Long id = createSubTask(subTaskConverter.fromCsvLine(cells, epic.get()));
+                            Optional<SubTask> savedSubTask = getSubTaskById(id);
+                            if (savedSubTask.isPresent()) {
+                                epic.get().adjustTiming();
+                                TaskStatus status = TaskStatus.valueOf(cells[3]);
+                                switch (status) {
+                                    case IN_PROGRESS:
+                                        savedSubTask.get().tryToMoveToInProgress();
+                                        updateSubTask(savedSubTask.get());
+                                        break;
+                                    case DONE:
+                                        savedSubTask.get().tryToMoveToInProgress();
+                                        updateSubTask(savedSubTask.get());
+                                        savedSubTask.get().tryToMmoveToDone();
+                                        updateSubTask(savedSubTask.get());
+                                        break;
+                                }
+                            }
                         }
                         break;
                 }
