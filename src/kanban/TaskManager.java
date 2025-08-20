@@ -4,24 +4,25 @@ import kanban.model.Epic;
 import kanban.model.SubTask;
 import kanban.model.Task;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public interface TaskManager {
+    List<Task> getPrioritizedTasks();
 
-    ArrayList<Task> getAllSimpleTasks();
+    List<Task> getAllSimpleTasks();
 
-    ArrayList<Epic> getAllEpics();
+    List<Epic> getAllEpics();
 
-    ArrayList<SubTask> getAllSubTasks();
+    List<SubTask> getAllSubTasks();
 
-    ArrayList<SubTask> getSubTasksByEpic(Long epicId);
+    List<SubTask> getSubTasksByEpic(Long epicId);
 
-    Task getTaskById(Long id);
+    Optional<Task> getTaskById(Long id);
 
-    Epic getEpicById(Long id);
+    Optional<Epic> getEpicById(Long id);
 
-    SubTask getSubTaskById(Long id);
+    Optional<SubTask> getSubTaskById(Long id);
 
     Long createSimpleTask(Task task);
 

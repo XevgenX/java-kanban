@@ -10,7 +10,12 @@ public class EpicConverter extends TaskConverter {
     }
 
     public Epic fromCsvLine(String[] cells) {
-        Epic epic = new Epic(Long.parseLong(cells[0]), cells[2], cells[4], TaskStatus.valueOf(cells[3]));
+        Epic epic = new Epic(Long.parseLong(cells[0]),
+                cells[2],
+                cells[4],
+                TaskStatus.valueOf(cells[3]),
+                extractStartTime(cells),
+                extractDuration(cells));
         return epic;
     }
 }
